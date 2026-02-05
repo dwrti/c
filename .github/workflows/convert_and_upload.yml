@@ -1,35 +1,29 @@
 name: Video Converter and Uploader
 
 on:
-  workflow_dispatch: # تشغيل يدوي
+  workflow_dispatch:
 
 jobs:
   convert_video:
     runs-on: ubuntu-latest
     
     steps:
-      - name: Install FFmpeg
-        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - name: Install FFmpeg and jq
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg jq
 
       - name: Download Video
         run: |
-          curl -L "YOUR_URL_HERE" -o "input_video.avi"
-        # استبدل YOUR_URL_HERE بالرابط الطويل الذي تملكه
+          curl -L "https://abra--5e4bd525.api.cosmic-crab.buzz/08732bbe4b5bd3c8b8d46d413d74fd8350911074/%D9%82%D8%B1%D9%82%D9%8A%D8%B9%D8%A7%D9%86/s2/Grge3an%20Se.02%20%7BEp.01%7D%20%7B2004%7D%20by%20buhussain.avi?api-key=8acbcf1e-732c-4574-a3bf-27e6a85b86f1&download=true&token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NzAzMzc5OTEsInJhdGUiOiI1TSIsInJvbGUiOiJmcmVlIiwic2Vzc2lvbklEIjoiTVRjMk56WTVORE16Tlh4T2QzZEJUa1pqTVZFd1VrVlZSVXBaVWxSU1UxRlVTa2xPTUhjeFZWWlNTRk5GYUV0TmEyc3lWMFZ6TVU1clNYcFZSVlpQVjJ4Q1YxTXhWa3RSTUhSaFZVUk9TRmRWZUVOU1ZVVTlmRnhmUWN4MnZlU0RsZ0xQd1dQTW1FQ1JBMk9TenNaV0hIRG1TU1hxMXNaUSIsImRvbWFpbiI6IndlYnRvci5pbyIsImFnZW50IjoiTW96aWxsYS81LjAgKE1hY2ludG9zaDsgSW50ZWwgTWFjIE9TIFggMTBfMTVfNykgQXBwbGVXZWJLaXQvNjA1LjEuMTUgKEtIVE1MLCBsaWtlIEdlY2tvKSBWZXJzaW9uLzI2LjIgU2FmYXJpLzYwNS4xLjE1IiwicmVtb3RlQWRkcmVzcyI6IjIwMDE6MTZhNDoyNmQ6NGI2NDo0OTg6NTUzYzo2NjNlOjVhNTEifQ.I6hDUpX0kwiDp3i-Ocy4onpT5P0m5cOzTGAyotqQI6U" -o "input_video.avi"
 
-      - name: Convert to MP4 (Target 190MB)
+      - name: Convert to MP4 (Target < 195MB)
         run: |
-          # نهدف لـ 190 ميجا لترك مساحة أمان بسيطة (195 ميجا كحد أقصى)
-          # الحسابات: (190 * 8192) / المدة بالثواني = Bitrate
-          # لكن ffmpeg يمكنه التعامل مع هدف الحجم عبر حسابات معقدة، سنستخدم ضغط ثابت جيد:
-          
-          ffmpeg -i input_video.avi -c:v libx264 -crf 23 -maxrate 2M -bufsize 4M -c:a aac -b:a 128k -fs 190M output_video.mp4
+          # استخدام ضغط سريع جداً لضمان عدم تجاوز الحجم مع الحفاظ على الأبناء (الجودة)
+          ffmpeg -i input_video.avi -c:v libx264 -preset fast -crf 24 -maxrate 1.8M -bufsize 3M -c:a aac -b:a 128k -fs 190M output_video.mp4
 
       - name: Upload to Gofile
         run: |
-          # الحصول على أفضل سيرفر متاح للرفع
           SERVER=$(curl -s https://api.gofile.io/servers | jq -r '.data.servers[0].name')
-          echo "Uploading to server: $SERVER"
-          
-          # رفع الملف
           RESPONSE=$(curl -F "file=@output_video.mp4" "https://${SERVER}.gofile.io/uploadFile")
-          echo "Download Link: $(echo $RESPONSE | jq -r '.data.downloadPage')"
+          echo "------------------------------------------"
+          echo "DOWNLOAD LINK: $(echo $RESPONSE | jq -r '.data.downloadPage')"
+          echo "------------------------------------------"
