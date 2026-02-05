@@ -1,0 +1,35 @@
+name: Video Converter and Uploader
+
+on:
+  workflow_dispatch: # تشغيل يدوي
+
+jobs:
+  convert_video:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Install FFmpeg
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+
+      - name: Download Video
+        run: |
+          curl -L "YOUR_URL_HERE" -o "input_video.avi"
+        # استبدل YOUR_URL_HERE بالرابط الطويل الذي تملكه
+
+      - name: Convert to MP4 (Target 190MB)
+        run: |
+          # نهدف لـ 190 ميجا لترك مساحة أمان بسيطة (195 ميجا كحد أقصى)
+          # الحسابات: (190 * 8192) / المدة بالثواني = Bitrate
+          # لكن ffmpeg يمكنه التعامل مع هدف الحجم عبر حسابات معقدة، سنستخدم ضغط ثابت جيد:
+          
+          ffmpeg -i input_video.avi -c:v libx264 -crf 23 -maxrate 2M -bufsize 4M -c:a aac -b:a 128k -fs 190M output_video.mp4
+
+      - name: Upload to Gofile
+        run: |
+          # الحصول على أفضل سيرفر متاح للرفع
+          SERVER=$(curl -s https://api.gofile.io/servers | jq -r '.data.servers[0].name')
+          echo "Uploading to server: $SERVER"
+          
+          # رفع الملف
+          RESPONSE=$(curl -F "file=@output_video.mp4" "https://${SERVER}.gofile.io/uploadFile")
+          echo "Download Link: $(echo $RESPONSE | jq -r '.data.downloadPage')"
